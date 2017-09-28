@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<!--
+#
+# encrypted-sign-in.htm
+#
+# Copyright (C) 2009-12 by RStudio, Inc.
+#
+# This program is licensed to you under the terms of version 3 of the
+# GNU Affero General Public License. This program is distributed WITHOUT
+# ANY EXPRESS OR IMPLIED WARRANTY, INCLUDING THOSE OF NON-INFRINGEMENT,
+# MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE. Please refer to the
+# AGPL (http://www.gnu.org/licenses/agpl-3.0.txt) for more details.
+#
+-->
+
+<html>
+
+<head>
+
+  <title>Welcome to RStudio</title>
+  <link rel="shortcut icon" href="images/favicon.ico" />
+  <!--ONLINE REQUIREMENTS-->
+  <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet" type='text/css'>
+  <link href="https://opensource.keycdn.com/fontawesome/4.7.0/font-awesome.min.css" rel="stylesheet" type='text/css'>
+  <!--OFFLINE REQUIREMENTS-->
+  <link rel="stylesheet" href="rstudio.css" type="text/css"/>
+  <!--ONLINE REQUIREMENTS-->
+  <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <!--OFFLINE REQUIREMENTS-->
+  <script type="text/javascript" src="js/encrypt.min.js"></script>
+
+  <script language='javascript'>
+  function verifyMe(){
+    if(document.getElementById('username').value==''){
+      alert('You must enter a username');
+      document.getElementById('username').focus();
+      return false;
+    }
+    if(document.getElementById('password').value==''){
+      alert('You must enter a password');
+      document.getElementById('password').focus();
+      return false;
+    }
+    return true;
+  }
+
+  function prepare() {
+    if (!verifyMe())
+    return false;
+    try {
+      var payload = document.getElementById('username').value + "\n" +
+      document.getElementById('password').value;
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "#'publicKeyUrl#", true);
+      xhr.onreadystatechange = function() {
+        try {
+          if (xhr.readyState == 4) {
+            if (xhr.status != 200) {
+              var errorMessage;
+              if (xhr.status == 0)
+              errorMessage = "Error: Could not reach server--check your internet connection";
+              else
+              errorMessage = "Error: " + xhr.statusText;
+
+              var errorDiv = document.getElementById('errorpanel');
+              errorDiv.innerHTML = '';
+              var errorp = document.createElement('p');
+              errorDiv.appendChild(errorp);
+              if (typeof(errorp.innerText) == 'undefined')
+              errorp.textContent = errorMessage;
+              else
+              errorp.innerText = errorMessage;
+              errorDiv.style.display = 'block';
+            }
+            else {
+              var response = xhr.responseText;
+              var chunks = response.split(':', 2);
+              var exp = chunks[0];
+              var mod = chunks[1];
+              var encrypted = encrypt(payload, exp, mod);
+              document.getElementById('persist').value = document.getElementById('staySignedIn').checked ? "1" : "0";
+              document.getElementById('package').value = encrypted;
+              document.getElementById('clientPath').value = window.location.pathname;
+              document.realform.submit();
+            }
+          }
+        } catch (exception) {
+          alert("Error: " + exception);
+        }
+      };
+      xhr.send(null);
+    } catch (exception) {
+      alert("Error: " + exception);
+    }
+  }
+  function submitRealForm() {
+    if (prepare())
+    document.realform.submit();
+  }
+  </script>
+
+  <style type="text/css">
+  .box{
+    border: 5px solid #eee; margin: 3px; padding: 10px; border-radius: 10px; min-height: 350px;
+  }
+  #errorpanel {
+    display: #errorDisplay#;
+  }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid" style="max-width: 1280px;">
+    <div class="row">
+      <div class="col-md-12">
+        <div style="background-image: url('images/back.png'); color: white; margin-top: 10px;" class="jumbotron">
+          <h1>RStudio</h1>
+          <h2>Open source and enterprise-ready professional software for R.</h2>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4" style="text-align: center;">
+        <div class="box">
+          <h2>Sign in</h2>
+          <form style=" text-align: left; " method="POST" #!formAction#>
+            <div class="form-group">
+              <label for="username">Username:</label>
+              <input type="text" class="form-control" name='username' value='' id='username' size='45'>
+            </div>
+            <div class="form-group">
+              <label for="pwd">Password:</label>
+              <input type="password" class="form-control" name='password' value='' id='password' size='45' autocomplete='off'>
+            </div>
+            <div class="text-danger" id="errorpanel"><p>#errorMessage#</p></div>
+            <div class="checkbox" style="display: #staySignedInDisplay#;">
+              <label><input type="checkbox" name="staySignedIn" id="staySignedIn" value="1"> Stay signed in</label>
+            </div>
+            <input type="hidden" name="appUri" value="#appUri#"/>
+            <button style=" margin: auto; display: block; " class="btn btn-success btn-lg" type="submit">Sign In</button>
+          </form>
+        </div>
+      </div>
+      <div class="col-md-4" style="text-align: center;">
+        <div class="box">
+          <h2>Admin site</h2>
+          <p>The administrator console provides all the necessary tools for manipulating the users in your RStudio server.</p>
+          <p><a class="btn btn-warning btn-lg" href="admin.php" target="_blank">Launch RStudio admin</a></p>
+        </div>
+      </div>
+      <div class="col-md-4" style="text-align: center;">
+        <div class="box">
+          <img src="images/rstudio-logo.png" style="margin: 10px;">
+          <p>RStudio makes R easier to use. It includes a code editor, debugging &amp; visualization tools.</p>
+          <p>This is an open-source version of RStudio Server. You can find more information about RStudio at <a href="https://www.rstudio.com">https://www.rstudio.com</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form action="#action#" name="realform" method="POST">
+    <input type="hidden" name="persist" id="persist" value=""/>
+    <input type="hidden" name="appUri" value="#appUri#"/>
+    <input type="hidden" name="clientPath" id="clientPath" value=""/>
+    <input id="package" type="hidden" name="v" value=""/>
+  </form>
+
+  <div id="login-html">
+    #!loginPageHtml#
+  </div>
+
+  <script type="text/javascript">
+  document.getElementById('username').focus();
+  </script>
+</body>
+</html>

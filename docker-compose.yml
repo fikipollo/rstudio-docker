@@ -1,0 +1,22 @@
+version: '2'
+services:
+
+    instance1-rstudio:
+      image: fikipollo/rstudio:0.9
+      container_name: instance1-rstudio
+      depends_on:
+        - instance1-data
+      volumes_from:
+        - instance1-data
+      ports:
+        - "8098:80"
+        - "8099:8787"
+      environment:
+        - ADMIN_USER=admin
+        - ADMIN_PASS=supersecret
+
+    instance1-data:
+      image: busybox
+      container_name: instance1-data
+      volumes:
+        - /data/instance1-data/:/home
