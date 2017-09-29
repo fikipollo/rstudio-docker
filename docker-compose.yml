@@ -19,4 +19,4 @@ services:
       image: busybox
       container_name: instance1-data
       volumes:
-        - /data/instance1-data/:/home
+        - /data/instance1-data/home:/home
